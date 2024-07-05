@@ -11,14 +11,15 @@ import styles from "./Main.css";
 
 export default class Main extends React.Component {
   state = {
-    isExist: true,
-    text: "仅用于办理住房公积金，他用无效。",
+    isExist: false,
+    text: "digination.io",
     hex: "#000000",
     rgb: { r: 0, g: 0, b: 0, a: 0.4 },
     fontSize: 23,
     watermarkHeight: 180,
     watermarkWidth: 280
   };
+
   componentDidMount() {
     this.watermark = new Watermark(this.mainCanvas);
     this.setOptions();
@@ -33,31 +34,37 @@ export default class Main extends React.Component {
   rotate = () => {
     this.watermark.rotate();
   };
+
   save = () => {
     this.watermark.save();
   };
+
   setOptions = () => {
     const { text, rgb, fontSize, watermarkWidth, watermarkHeight } = this.state;
     const fillStyle = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${rgb.a})`;
     this.watermark.setOptions({ text, fillStyle, fontSize, watermarkWidth, watermarkHeight });
   };
+
   onChangeText = (key, value) => {
     this.setState({ [key]: value }, () => {
       this.setOptions();
     });
   };
+
   onChangeColor = ({ rgb, hex }) => {
     rgb.a = this.state.rgb.a;
     this.setState({ rgb, hex }, () => {
       this.setOptions();
     });
   };
+
   onChangeAlpha = color => {
     const { rgb, hex } = color;
     this.setState({ rgb, hex }, () => {
       this.setOptions();
     });
   };
+  
   renderControl = () => {
     const { isExist, text, hex, rgb, fontSize, watermarkHeight, watermarkWidth } = this.state;
     const labelWidth = 62;

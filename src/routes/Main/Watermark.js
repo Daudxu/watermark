@@ -1,7 +1,6 @@
 import Canvas2Image from "../../utils/Canvas2Image";
+
 function canvasTextAutoLine(ctx, width, str, initX, initY, lineHeight = 20) {
-  // ctx.fillText(str, 0, lineHeight);
-  // return;
   var lineWidth = 0;
   var canvasWidth = width;
   var lastSubStrIndex = 0;
@@ -9,7 +8,6 @@ function canvasTextAutoLine(ctx, width, str, initX, initY, lineHeight = 20) {
     lineWidth += ctx.measureText(str[i]).width;
 
     if (lineWidth > canvasWidth - initX) {
-      //减去initX,防止边界出现的问题
       ctx.fillText(str.substring(lastSubStrIndex, i), initX, initY);
       initY += lineHeight;
       lineWidth = 0;
@@ -25,16 +23,17 @@ function Watermark(canvas, opt = {}) {
   let img;
   let step = 0;
   let cw = document.createElement("canvas");
-  // document.getElementById("test").appendChild(cw);
   let img_width, img_height;
   let userOptions = opt;
+
   const getOptions = () => {
     const defaultOptions = {
-      text: "仅用于办理XXXX，他用无效。",
+      text: "DIGINATION.IO",
       fontSize: 23,
       fillStyle: "rgba(100, 100, 100, 0.4)",
       watermarkWidth: 280,
-      watermarkHeight: 180
+      watermarkHeight: 180,
+      rotateAngle: -16 // 默认旋转角度
     };
     const options = { ...defaultOptions, ...userOptions };
     if (options.fontSize < 10) {
@@ -50,30 +49,39 @@ function Watermark(canvas, opt = {}) {
     }
     return options;
   };
+
   const createWatermarkCanvas = () => {
-    const { text, fontSize, fillStyle, watermarkWidth, watermarkHeight } = getOptions();
-    const rotate = 20;
+    const { text, fontSize, fillStyle, watermarkWidth, watermarkHeight, rotateAngle } = getOptions();
     const wctx = cw.getContext("2d");
-    //清除小画布
-    // wctx.clearRect(0, 0, cw.width, cw.height);
-    const { sqrt, pow, sin, tan } = Math;
+    const { sqrt, pow, sin, cos } = Math;
+    
+    const radians = rotateAngle * Math.PI / 180;
+    const sinAngle = sin(radians);
+    const cosAngle = cos(radians);
+
+    // 计算适当的画布大小
     cw.width = sqrt(pow(watermarkWidth, 2) + pow(watermarkHeight, 2));
-    cw.height = watermarkHeight;
+    cw.height = sqrt(pow(watermarkWidth, 2) + pow(watermarkHeight, 2));
 
-    wctx.font = `${fontSize}px 黑体`;
+    wctx.font = `${fontSize}px Arial`;
 
-    //文字倾斜角度
-    wctx.rotate(-rotate * Math.PI / 180);
+    wctx.translate(cw.width / 2, cw.height / 2); // 平移到画布中心
+    wctx.rotate(radians); // 旋转画布
+    wctx.translate(-cw.width / 2, -cw.height / 2); // 平移回画布原点
+
     wctx.fillStyle = fillStyle;
-    const Y = parseInt(sin(rotate * Math.PI / 180) * watermarkWidth, 10);
-    const X = -parseInt(Y / tan((90 - rotate) * Math.PI / 180), 10);
-    canvasTextAutoLine(wctx, watermarkWidth, text, X + 10, Y + fontSize + 20, fontSize * 1.4);
+
+    const x = (cw.width - watermarkWidth) / 2;
+    const y = (cw.height + fontSize) / 2;
+
+    canvasTextAutoLine(wctx, watermarkWidth, text, x, y, fontSize * 1.4);
   };
 
   const _draw = () => {
     drawImage();
     addWatermark();
   };
+
   const drawImage = () => {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     switch (step) {
@@ -109,12 +117,13 @@ function Watermark(canvas, opt = {}) {
         break;
     }
   };
+
   const addWatermark = () => {
-    //平铺--重复小块的canvas
     var pat = ctx.createPattern(cw, "repeat");
     ctx.fillStyle = pat;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
   };
+
   this.draw = dataURL => {
     step = 0;
     img = new Image();
@@ -131,6 +140,7 @@ function Watermark(canvas, opt = {}) {
     };
     img.src = dataURL;
   };
+
   this.rotate = () => {
     if (!img) {
       return;
@@ -138,12 +148,14 @@ function Watermark(canvas, opt = {}) {
     step >= 3 ? (step = 0) : step++;
     _draw();
   };
+
   this.save = () => {
     if (!img) {
       return;
     }
     Canvas2Image.saveAsJPEG(canvas);
   };
+
   this.setOptions = (obj = {}) => {
     userOptions = obj;
     createWatermarkCanvas();
@@ -152,6 +164,7 @@ function Watermark(canvas, opt = {}) {
     }
     _draw();
   };
+
   const watermarkCanvas = document.createElement("canvas");
   watermarkCanvas.width = "160px";
   watermarkCanvas.height = "100px";
